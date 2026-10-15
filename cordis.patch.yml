@@ -1,0 +1,5 @@
+# dsh-pulse-rail — 宿主侧树行。
+# 没有这一行，packages 里的 dsh.client 声明不会被扫描，浏览器半侧永远不会被提供。
+- insert:
+    - id: pulse-rail
+      name: 'dsh-pulse-rail'
