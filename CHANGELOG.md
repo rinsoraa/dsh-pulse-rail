@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- 发布到 npm（`dsh-pulse-rail`），README 中英双版都补上 `dsh plugin add dsh-pulse-rail` 的安装方式。
+  插件市场按 npm 包名建立目录，发布后可被市场搜到/更新。
+
 ## 0.2.3
 
 - **修复：从插件市场点「更新」会把这个插件弄坏**。采集器 `pulse-tap.exe` 原本直接在插件包目录里运行，

@@ -1,6 +1,6 @@
 {
   "name": "dsh-pulse-rail",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Music visualiser for the DeepSeek Harness turn-navigation rail: the rail's thin bars grow and thicken with the system audio, captured with WASAPI loopback. No admin rights, no drivers, geometry only. / DSH 轮次导航条的音乐律动可视化插件。",
   "license": "MIT",
   "type": "module",

@@ -36,7 +36,15 @@
 
 > 管理器在有 agent 运行时拒绝安装，请在空闲会话里操作。
 
-### B. 手动安装（本插件开发时的做法）
+### B. 从 npm 安装
+
+已发布为 [`dsh-pulse-rail`](https://www.npmjs.com/package/dsh-pulse-rail)：
+
+```sh
+dsh plugin add dsh-pulse-rail      # 或 npm i dsh-pulse-rail
+```
+
+### C. 手动安装（本插件开发时的做法）
 
 ```bat
 git clone https://github.com/<you>/dsh-pulse-rail.git

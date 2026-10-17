@@ -38,7 +38,15 @@ thickens with the system audio that is playing right now.
 
 > The manager refuses to install while an agent is running — do it from an idle session.
 
-### B. Manual (what this plugin was developed with)
+### B. From npm
+
+Published as [`dsh-pulse-rail`](https://www.npmjs.com/package/dsh-pulse-rail):
+
+```sh
+dsh plugin add dsh-pulse-rail      # or: npm i dsh-pulse-rail
+```
+
+### C. Manual (what this plugin was developed with)
 
 ```bat
 git clone https://github.com/<you>/dsh-pulse-rail.git
