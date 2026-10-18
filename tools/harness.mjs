@@ -11,13 +11,15 @@
  */
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AudioTap } from '../lib/tap.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
 const PORT = Number(process.argv[2] || 8791);
+// A/B 基准用：DSH_PULSE_CLIENT=<绝对路径> 时改发该 client bundle（默认仍是 ../lib/client.js）
+const CLIENT = process.env.DSH_PULSE_CLIENT ? resolve(process.env.DSH_PULSE_CLIENT) : join(ROOT, 'lib', 'client.js');
 
 const tap = new AudioTap({ log: (m) => console.log('[tap] ' + m), fps: 30 });
 const reports = [];
@@ -42,7 +44,7 @@ const server = createServer(async (req, res) => {
   }
   if (path === '/plugins/dsh-pulse-rail/client.js') {
     res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
-    res.end(readFileSync(join(ROOT, 'lib', 'client.js'), 'utf8'));
+    res.end(readFileSync(CLIENT, 'utf8'));
     return;
   }
   if (path === '/pulse-rail/state') {
@@ -85,7 +87,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log('harness on http://127.0.0.1:' + PORT + '/');
+  console.log('harness on http://127.0.0.1:' + PORT + '/  client=' + CLIENT);
 });
 
 process.on('SIGINT', () => { tap.dispose(); process.exit(0); });

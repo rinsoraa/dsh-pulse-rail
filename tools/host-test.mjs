@@ -9,7 +9,7 @@
  */
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PAGE } from './page.mjs';
 import * as host from '../lib/index.js';
@@ -17,6 +17,8 @@ import * as host from '../lib/index.js';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
 const PORT = Number(process.argv[2] || 8792);
+// A/B 基准用：DSH_PULSE_CLIENT=<绝对路径> 时改发该 client bundle（默认仍是 ../lib/client.js）
+const CLIENT = process.env.DSH_PULSE_CLIENT ? resolve(process.env.DSH_PULSE_CLIENT) : join(ROOT, 'lib', 'client.js');
 
 const routes = [];
 const webServer = {
@@ -52,7 +54,7 @@ const server = createServer((req, res) => {
   }
   if (path === '/plugins/dsh-pulse-rail/client.js') {
     res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
-    res.end(readFileSync(join(ROOT, 'lib', 'client.js'), 'utf8'));
+    res.end(readFileSync(CLIENT, 'utf8'));
     return;
   }
   if (path === '/report') {
@@ -72,6 +74,6 @@ const server = createServer((req, res) => {
   res.end('not found');
 });
 
-server.listen(PORT, '127.0.0.1', () => console.log('host-test on http://127.0.0.1:' + PORT + '/'));
+server.listen(PORT, '127.0.0.1', () => console.log('host-test on http://127.0.0.1:' + PORT + '/  client=' + CLIENT));
 
 process.on('SIGINT', () => { try { dispose(); } catch {} server.close(); process.exit(0); });

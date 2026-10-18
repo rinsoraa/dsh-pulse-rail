@@ -116,12 +116,14 @@ async function main() {
     }
     await sleep(400);
   }
-  console.log('SUMMARY samples=' + samples + ' animated=' + animated + (animated > samples * 0.3 ? ' => PULSE OK' : ' => NO PULSE'));
+  const pulseOk = samples > 0 && animated > samples * 0.3;
+  console.log('SUMMARY samples=' + samples + ' animated=' + animated + (pulseOk ? ' => PULSE OK' : ' => NO PULSE') + ' exit=' + (pulseOk ? 0 : 1));
   try { ws.close(); } catch {}
   if (tone) { try { tone.kill(); } catch {} }
   edge.kill();
   await sleep(300);
-  process.exit(0);
+  // 真·非零退出：没有采样到页面、或律动帧数不足 30% 都算失败（此前恒 exit 0，CI 抓不到回归）
+  process.exit(pulseOk ? 0 : 1);
 }
 
 main().catch((err) => { console.log('ERROR ' + (err && err.stack || err)); try { edge.kill(); } catch {} process.exit(1); });

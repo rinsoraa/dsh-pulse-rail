@@ -3,3 +3,4 @@ node_modules/
 *.wav
 .DS_Store
 Thumbs.db
+tools/out/
