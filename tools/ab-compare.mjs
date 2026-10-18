@@ -21,7 +21,8 @@
  * 约束：不改 lib/、不 npm install；端口用 18721（避开真实 DSH 的 19387/11636）。
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,7 +30,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
 const OUT = join(HERE, 'out');
 
-const BARS = 28;            // 固定横条数（应用最多 42 根；28 根够密又能让扫描的峰值位移可见）
+const BARS = 42;            // 固定横条数 = 应用上限（42 根，采样最密；28 根会因采样欠密低估相邻差变化）
 const BANDS = 12;           // 与 harness / 宿主默认 config.bands 一致
 const HARNESS_PORT = 18721;
 const CFG = {
@@ -84,15 +85,15 @@ function buildTimeline() {
   const silent = () => ({ playing: false, rms: 0, b: zeroB() });
   const sound = (b, rms = 0.25) => ({ playing: true, rms, b });
 
-  add('pre', 30, silent, 0);
-  add('spike', 70, () => sound(spikeB(5, 1.0)), 25);      // 单频段尖峰（band 5）
-  add('gap1', 18, silent, 0);
-  add('alt', 70, () => sound(altB(0.9, 0.12)), 25);       // 相邻强弱交替
-  add('gap2', 18, silent, 0);
-  add('sweep', 170, (i) => sound(sweepB((i / 169) * (BANDS - 1)), 0.3), 8); // 低频→高频扫描
-  add('gap3', 18, silent, 0);
-  add('uniform', 60, () => sound(new Array(BANDS).fill(0.55)), 15); // 均匀
-  add('gap4', 18, silent, 0);
+  add('pre', 40, silent, 0);
+  add('spike', 80, () => sound(spikeB(5, 1.0)), 40);      // 单频段尖峰（band 5）
+  add('gap1', 45, silent, 0);                              // 留足 AGC 慢基线衰减（slowMs=900）
+  add('alt', 80, () => sound(altB(0.9, 0.12)), 40);       // 相邻强弱交替
+  add('gap2', 45, silent, 0);
+  add('sweep', 150, (i) => sound(sweepB((i / 149) * (BANDS - 1)), 0.3), 10); // 低频→高频扫描
+  add('gap3', 60, silent, 0);
+  add('uniform', 90, () => sound(new Array(BANDS).fill(0.55)), 50); // 均匀
+  add('gap4', 50, silent, 0);
   add('riseSilence', 40, silent, 0);                      // 静音→有声
   add('riseSound', 60, () => sound(new Array(BANDS).fill(0.8), 0.3), 0);
   add('tail', 20, silent, 0);
@@ -267,11 +268,13 @@ async function runVariant(edgePath, label, clientPath) {
 
   let edge = null;
   let cdp = null;
+  let userDataDirRef = null;
   try {
     if (!(await waitHarness(HARNESS_PORT, 8000))) throw new Error('harness 未在 8s 内监听 ' + HARNESS_PORT);
     const url = 'http://127.0.0.1:' + HARNESS_PORT + '/';
     const dbgPort = 9411 + Math.floor(Math.random() * 300);
-    const userDataDir = join(OUT, 'edge-profile-' + label);
+    const userDataDir = mkdtempSync(join(tmpdir(), 'dpr-ab-edge-'));   // 临时 profile，避免往仓库里塞大文件
+    userDataDirRef = userDataDir;
     edge = spawn(edgePath, [
       '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
       '--disable-background-timer-throttling', '--disable-renderer-backgrounding',
@@ -345,6 +348,7 @@ async function runVariant(edgePath, label, clientPath) {
     };
   } finally {
     if (cdp) cdp.close();
+    try { if (userDataDirRef) rmSync(userDataDirRef, { recursive: true, force: true }); } catch { /* ignore */ }
     if (edge) { try { edge.kill(); } catch { /* ignore */ } }
     try { harness.kill(); } catch { /* ignore */ }
   }
@@ -356,13 +360,19 @@ function frameStats(len) {
   let adjSum = 0, adjMax = 0;
   for (let i = 0; i + 1 < n; i++) { const d = Math.abs(len[i + 1] - len[i]); adjSum += d; if (d > adjMax) adjMax = d; }
   let mn = Infinity, mx = -Infinity, am = 0, total = 0, centroid = 0;
+  let leftSum = 0, leftTotal = 0;
+  const half = Math.floor((n - 1) / 2);   // center 镜像布局：镜像折叠后取左半边质心 = 规范峰值位置
   for (let i = 0; i < n; i++) {
     const v = len[i];
     if (v < mn) mn = v;
     if (v > mx) { mx = v; am = i; }
     total += v;
     centroid += i * v;
+    if (i <= half) { leftSum += i * v; leftTotal += v; }
   }
+  // 长度含 minW 底座（~9px），质心改用「高出本帧最小值的部分」加权，否则底座会把质心拉向中心
+  let eSum = 0, eTot = 0;
+  for (let i = 0; i <= half; i++) { const e = Math.max(0, len[i] - mn); eSum += i * e; eTot += e; }
   return {
     adjMean: n > 1 ? adjSum / (n - 1) : 0,
     adjMax,
@@ -370,6 +380,7 @@ function frameStats(len) {
     min: mn, max: mx, meanLen: total / n,
     argmax: am,
     centroid: total > 1e-9 ? centroid / total : 0,
+    centroidLeft: eTot > 1e-6 ? eSum / eTot : am,
   };
 }
 
@@ -421,6 +432,7 @@ function summarizeRun(run) {
       argmaxMode: mode(stats.map((s) => s.argmax)),
       meanLen: mean(stats.map((s) => s.meanLen)),
       centroidAvg: mean(stats.map((s) => s.centroid)),
+      centroidLeftAvg: mean(stats.map((s) => s.centroidLeft)),
       series: {
         t: list.map((x) => round(x.f.t, 1)),
         argmax: stats.map((s) => s.argmax),
@@ -432,7 +444,7 @@ function summarizeRun(run) {
       rightEdgeSpread: Math.max(...list.map((x) => x.f.rMax - x.f.rMin)),
     };
     if (tag === 'sweep') {
-      const cents = stats.map((s) => s.centroid);
+      const cents = stats.map((s) => s.centroidLeft);
       const moves = [];
       for (let i = 1; i < cents.length; i++) moves.push(cents[i] - cents[i - 1]);
       out[tag].centroidSpan = Math.max(...cents) - Math.min(...cents);
@@ -535,9 +547,9 @@ function printTable(base, cur) {
     addRow(tag, 'contrast max-min (px)', b.contrastAvg, n.contrastAvg);
     addRow(tag, 'argmax (bar)', b.argmaxAvg, n.argmaxAvg, (v) => round(v, 1));
     if (tag === 'sweep') {
-      addRow(tag, 'centroid span (bar)', b.centroidSpan, n.centroidSpan, (v) => round(v, 2));
-      addRow(tag, 'centroid max move/frame', b.centroidMaxMove, n.centroidMaxMove, (v) => round(v, 3));
-      addRow(tag, 'centroid reversals', b.centroidReversals, n.centroidReversals, (v) => String(v));
+      addRow(tag, 'peakPos(左半质心) span', b.centroidSpan, n.centroidSpan, (v) => round(v, 2));
+      addRow(tag, 'peakPos max move/frame', b.centroidMaxMove, n.centroidMaxMove, (v) => round(v, 3));
+      addRow(tag, 'peakPos reversals', b.centroidReversals, n.centroidReversals, (v) => String(v));
     }
   }
   addRow('perf', 'frame cost mean (ms)', base.__perf.costMeanMs, cur.__perf.costMeanMs);
@@ -547,11 +559,11 @@ function printTable(base, cur) {
   const head = ['scenario', 'metric', 'baseline', 'curve1'];
   const widths = head.map((h, i) => Math.max(h.length, ...rows.map((r) => String(r[i]).length)));
   const line = (cells) => cells.map((c, i) => String(c).padEnd(widths[i])).join('  ');
-  console.log('');
-  console.log(line(head));
-  console.log(widths.map((w) => '-'.repeat(w)).join('  '));
-  for (const r of rows) console.log(line(r));
-  console.log('');
+  log('');
+  log(line(head));
+  log(widths.map((w) => '-'.repeat(w)).join('  '));
+  for (const r of rows) log(line(r));
+  log('');
 }
 
 // ── 主流程 ───────────────────────────────────────────────────────────────────
@@ -603,10 +615,10 @@ async function main() {
   printTable(base, cur);
   const checks = verdict(base, cur);
   let failed = 0;
-  console.log('门限检查：');
+  log('门限检查：');
   for (const c of checks) {
     if (!c.ok) failed++;
-    console.log('  ' + (c.ok ? 'PASS' : 'FAIL') + '  ' + c.id.padEnd(18) + '  ' + c.detail);
+    log('  ' + (c.ok ? 'PASS' : 'FAIL') + '  ' + c.id.padEnd(18) + '  ' + c.detail);
   }
 
   // 退出码：1 环境/运行失败；3 相邻差收益不达标；4 对比度/峰值退化；5 扫描连续性退化；6 性能超限
