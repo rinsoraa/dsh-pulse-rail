@@ -148,6 +148,7 @@ lib/pulse-tap.exe ── 1024 点 FFT ──► 12 个对数频段（45 Hz – 1
 | `%USERPROFILE%\.dsh\pulse-rail\diag.jsonl` | 浏览器半侧诊断日志（超过 256KB 会重写） |
 | `%APPDATA%\@deepseek-ai\dsh-desktop\logs\crash-*-web-boot.log` | 渲染进程 `console.error`（例如 `[dsh-pulse-rail] …`） |
 | `lib\pulse-tap.exe --fps 30` | 手动跑采集器看 JSON 流 |
+| 长会话打开后对话区只剩一条竖缝 / 界面像整体左移 | 0.4.0 的回归，**升级到 0.4.1**；临时重载窗口可恢复（回归测试 `node tools/rail-target-test.mjs`） |
 
 横条不动？先放点声音，再看 `/pulse-rail/state` 的 `playing`。如果 `running` 是 false，看 `lastError`
 （某些 USB/蓝牙端点会「假装在放、实际全 0」，插件会在持续静音 5 秒后自动重建采集客户端）。
@@ -160,6 +161,7 @@ lib/pulse-tap.exe ── 1024 点 FFT ──► 12 个对数频段（45 Hz – 1
 | `tools/harness.mjs`（+`page.mjs`） | 离线验证台：复刻导航条 DOM/CSS，上报每根横条的实测几何 |
 | `tools/host-test.mjs` | 用最小 `webServer` 实现跑**真实** `lib/index.js` |
 | `tools/cdp-check.mjs` | headless Edge + CDP：采样 `::before` 的 transform、右缘对齐、命中测试 |
+| `tools/rail-target-test.mjs` | 回归：长会话（121 轮）时标记只能落在导航条 scroller 上，对话容器宽度不变 |
 | `tools/mktone.py`、`tools/mkmusic.py` | 生成测试音 / 伪音乐 |
 
 改了 `pulse-tap.cs` 之后重新编译采集器：

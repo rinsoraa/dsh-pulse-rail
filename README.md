@@ -164,6 +164,7 @@ Manager, or set `"enabled": false`.
 | `%USERPROFILE%\.dsh\pulse-rail\diag.jsonl` | rolling client diag log (256 KB cap) |
 | `%APPDATA%\@deepseek-ai\dsh-desktop\logs\crash-*-web-boot.log` | renderer `console.error` lines (e.g. `[dsh-pulse-rail] …`) |
 | `lib\pulse-tap.exe --fps 30` | run the helper by hand and watch the JSON stream |
+| Conversation squeezed to a thin strip / UI looks shifted left on long sessions | 0.4.0 regression — **upgrade to 0.4.1**; reloading the window recovers temporarily (regression test: `node tools/rail-target-test.mjs`) |
 
 No sound in the bars? Play something and check `/pulse-rail/state` → `playing`. If `running` is
 false, look at `lastError` (a USB/Bluetooth endpoint that reports all-zero samples is re-initialised
@@ -177,6 +178,7 @@ automatically after 5 s of silence).
 | `tools/harness.mjs` (+ `page.mjs`) | offline bench that replicates the rail DOM/CSS and reports every bar's measured geometry |
 | `tools/host-test.mjs` | runs the real `lib/index.js` against a minimal `webServer` |
 | `tools/cdp-check.mjs` | headless Edge + CDP: samples `::before` transforms, right-edge alignment and hit-testing |
+| `tools/rail-target-test.mjs` | regression: on a 121-turn session the tag must land on the rail scroller only, conversation width unchanged |
 | `tools/mktone.py`, `tools/mkmusic.py` | generate test tones / pseudo-music |
 
 Rebuild the helper whenever `pulse-tap.cs` changes:

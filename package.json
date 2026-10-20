@@ -1,6 +1,6 @@
 {
   "name": "dsh-pulse-rail",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "DSH Pulse Rail — 会话导航条音乐律动（Silk Wave）",
   "license": "MIT",
   "type": "module",

@@ -30,6 +30,18 @@ staticIdx=21(未接管) … 50(未接管)   cls=xpvNua_mark xpvNua_markUnloaded
 滚动/播放时 `sync` 高频触发，每次 `console.error` 上报到控制台。经用户确认，**在引入 Silk Wave 之前的版本即已存在**。
 当前版本已将 `sync` 从「每次都上报」改为节流上报，频率已降低，但未完全消除。
 
+## 4. 已修复：0.4.0 长会话「界面整体左移」（fixed in 0.4.1）
+
+**现象**：打开轮次超过约 120 轮的会话后，对话区被压成窗口左缘约 28px 宽的一条竖缝，看起来像整个界面
+偏移到了左侧；标题栏、标签页、输入框正常。重载页面可恢复，但再次打开该会话必然复现。
+
+**根因**：`railLike()` 的 `height > 1200` 上限把导航条自己的 marks 容器（高度 = 轮次 × 10px）排除，
+`pick()` 退而选中外层 `<nav>`；`tagRail()` 只能向上找「类名含 scroller」的祖先，而真正的 scroller 在
+`<nav>` 下面，于是 `data-dpr-rail="scroller"` 被打到了对话滚动容器上，CSS 把它压成 220px 并左移 192px。
+
+**修复**：见 0.4.1（发现收敛到 marks/scroller、只允许标记包含横条的 scroller、启动清扫残留标记）。
+回归测试：`node tools/rail-target-test.mjs`。
+
 ## 3. 事故记录：0.3.x 测试期一次渲染循环损坏
 
 开发测试期曾把 `rafId = window.requestAnimationFrame(loop);` 误拆为两行，导致每帧 `ReferenceError: d is not defined`、律动完全失效。
