@@ -1,7 +1,7 @@
 {
   "name": "dsh-pulse-rail",
-  "version": "0.3.0",
-  "description": "Music visualiser for the DeepSeek Harness turn-navigation rail: the rail's thin bars grow and thicken with the system audio, captured with WASAPI loopback. No admin rights, no drivers, geometry only. / DSH 轮次导航条的音乐律动可视化插件。",
+  "version": "0.4.0",
+  "description": "DSH Pulse Rail — 会话导航条音乐律动（Silk Wave）",
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
@@ -11,23 +11,53 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib/index.js", "lib/tap.js", "lib/config.js", "lib/client.js",
-    "lib/pulse-tap.cs", "lib/pulse-tap.exe",
-    "cordis.patch.yml", "README.md", "README.zh.md", "CHANGELOG.md", "LICENSE"
+    "lib/index.js",
+    "lib/tap.js",
+    "lib/config.js",
+    "lib/client.js",
+    "lib/pulse-tap.cs",
+    "lib/pulse-tap.exe",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [
-    "deepseek-harness", "dsh", "dsh-plugin", "dsh-web",
-    "music-visualizer", "audio-visualizer", "spectrum",
-    "wasapi", "loopback", "system-audio", "windows",
-    "轮次导航条", "音乐律动", "频谱可视化"
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "dsh-web",
+    "music-visualizer",
+    "audio-visualizer",
+    "spectrum",
+    "wasapi",
+    "loopback",
+    "system-audio",
+    "windows",
+    "轮次导航条",
+    "音乐律动",
+    "频谱可视化"
   ],
   "author": "rinsoraa",
-  "repository": { "type": "git", "url": "git+https://github.com/rinsoraa/dsh-pulse-rail.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rinsoraa/dsh-pulse-rail.git"
+  },
   "homepage": "https://github.com/rinsoraa/dsh-pulse-rail#readme",
-  "bugs": { "url": "https://github.com/rinsoraa/dsh-pulse-rail/issues" },
+  "bugs": {
+    "url": "https://github.com/rinsoraa/dsh-pulse-rail/issues"
+  },
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
-    "client": { "platform": "web", "immediately": true }
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
   }
 }

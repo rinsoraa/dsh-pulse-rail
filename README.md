@@ -1,3 +1,12 @@
+## 律动模式（0.4.0）
+
+导航条默认使用 **Silk Wave**：随系统音频（12 频段）实时律动，
+每根柱的瞬时长度来自它自己对应的频段，再做满量程归一化与邻域柔化 —— 跟拍强度与原版一致，相邻柱过渡更连续。
+
+已知问题见 [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md)（滚动后部分柱子失去律动的 bug 仍未解决）。
+
+CURVE-1.3（C-fix）已归档在 [`vendor/curve13-cfix/`](vendor/curve13-cfix/)，未发布。
+
 # dsh-pulse-rail
 
 [English](README.md) | [中文](README.zh.md)
